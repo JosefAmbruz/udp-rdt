@@ -24,7 +24,7 @@ ScannerConfig CliParser::parse(int argc, char *const *argv) {
   optind = 0;
   opterr = 0;
 
-  const char *const short_opts = "is:w:h";
+  const char *const short_opts = "";
   const option long_opts[] = {{"help", no_argument, nullptr, 'h'},
                               {nullptr, 0, nullptr, 0}};
 

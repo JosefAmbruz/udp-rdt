@@ -74,6 +74,10 @@ $(DEBUG_TARGET): $(DEBUG_OBJS)
 test-debug: $(TEST_DEBUG_TARGET)
 	@echo "Test debug build ready. Run: gdb ./$(TEST_DEBUG_TARGET)"
 
+# `make NixDevShellName` - Outputs 'c' to stdout
+NixDevShellName:
+	@echo "c"
+
 $(TEST_DEBUG_TARGET): $(TEST_DEBUG_OBJS)
 	$(CXX) $(CXXFLAGS) $(TEST_DEBUG_FLAGS) $^ -o $@ $(LDLIBS)
 
