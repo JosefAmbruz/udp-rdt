@@ -15,7 +15,7 @@ SRC_DIR = src
 BUILD_DIR = build
 
 # --- Source Filtering ---
-ALL_SRCS = $(wildcard $(SRC_DIR)/*.cpp)
+ALL_SRCS = $(shell find $(SRC_DIR) -name "*.cpp")
 
 # Define entry points
 APP_MAIN = $(SRC_DIR)/main.cpp
@@ -27,6 +27,7 @@ PROD_SRCS = $(filter-out $(TEST_MAIN), $(ALL_SRCS))
 TEST_SRCS = $(filter-out $(APP_MAIN), $(ALL_SRCS))
 
 # --- Object Files ---
+# To handle subdirectories, we preserve the directory structure in the build/ folder.
 PROD_OBJS       = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(PROD_SRCS))
 TEST_OBJS       = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%_test.o, $(TEST_SRCS))
 DEBUG_OBJS      = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%_debug.o, $(PROD_SRCS))
@@ -83,15 +84,19 @@ $(TEST_DEBUG_TARGET): $(TEST_DEBUG_OBJS)
 
 # --- Compilation Rules ---
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) $(PROD_FLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%_test.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%_debug.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) $(DEBUG_FLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%_test_debug.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) $(TEST_DEBUG_FLAGS) -c $< -o $@
 
 # Dynamically create the build directory

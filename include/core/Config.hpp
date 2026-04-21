@@ -1,13 +1,16 @@
 #pragma once
 
+#include <arpa/inet.h>
 #include <chrono>
 #include <cstdint>
 #include <getopt.h>
+#include <netdb.h>
 #include <netinet/in.h>
 #include <optional>
 #include <string>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 class Config {
 public:

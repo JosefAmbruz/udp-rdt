@@ -10,8 +10,7 @@
 
 int main(int argc, char *const *argv) {
   try {
-    // TODO: Implement Config
-    // Config config(argc, argv);
+    Config Config(argc, argv);
 
     // TODO: Implement Application
     // Application app(config);

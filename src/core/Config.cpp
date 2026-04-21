@@ -1,17 +1,9 @@
 #include "../../include/core/Config.hpp"
 
-#include <arpa/inet.h>
-#include <chrono>
 #include <climits>
-#include <cstdint>
 #include <cstring>
 #include <iostream>
-#include <netdb.h>
-#include <optional>
 #include <stdexcept>
-#include <string>
-#include <sys/socket.h>
-#include <unistd.h>
 
 Config::Config(int argc, char *const *argv) {
   bool has_server_f = false;
@@ -21,7 +13,12 @@ Config::Config(int argc, char *const *argv) {
   opterr = 0;
   int opt;
 
-  while ((opt = getopt(argc, argv, "hsca:p:i:o:w:")) != -1) {
+  static struct option long_options[] = {{"help", no_argument, 0, 'h'},
+                                         {0, 0, 0, 0}};
+
+  int option_index = 0;
+  while ((opt = getopt_long(argc, argv, "hsca:p:i:o:w:", long_options,
+                            &option_index)) != -1) {
     switch (opt) {
     case 'h':
       std::cout << "Usage Server: ./ipk-rdt -s -p PORT [-a ADDRESS] [-o "
