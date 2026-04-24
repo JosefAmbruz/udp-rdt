@@ -6,7 +6,6 @@
 #include <cerrno>
 #include <csignal>
 #include <iostream>
-#include <memory>
 #include <poll.h>
 #include <system_error>
 #include <unistd.h>
