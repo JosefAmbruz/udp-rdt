@@ -35,7 +35,7 @@ std::vector<uint8_t> Packet::serialize() const {
   // Pack data into the byte array
   std::memcpy(buffer.data() + 0, &net_conn_id, 4);
   std::memcpy(buffer.data() + 4, &net_seq_num, 4);
-  std::memcpy(buffer.data() + 8, &net_seq_num, 4);
+  std::memcpy(buffer.data() + 8, &net_ack_num, 4);
   std::memcpy(buffer.data() + 12, &net_flags, 2);
   std::memcpy(buffer.data() + 14, &net_payload_len, 2);
 

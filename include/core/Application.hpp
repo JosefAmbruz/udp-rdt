@@ -30,13 +30,10 @@ public:
 
 private:
   const Config &config;
-  // TODO: Uncomment UdpSocket once it is done
   UdpSocket socket;
-  // TODO: Uncomment TimerManager once it is done
   TimerManager timer_manager;
 
   // Points to either RdtSender or RdtReceiver
-  // TODO: do the same here
   std::unique_ptr<RdtEndpoint> endpoint;
 
   // Signal handling variables

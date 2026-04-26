@@ -1,7 +1,7 @@
 #include "../../include/core/Application.hpp"
 
-#include "../protocol/RdtReceiver.cpp"
-#include "../protocol/RdtSender.cpp"
+#include "../../include/protocol/RdtReceiver.hpp"
+#include "../../include/protocol/RdtSender.hpp"
 
 #include <cerrno>
 #include <csignal>
@@ -14,7 +14,7 @@
 volatile sig_atomic_t Application::is_running = 1;
 
 // Signal handler
-void Application::signal_handler(int signum) { is_running = 0; }
+void Application::signal_handler(int) { is_running = 0; }
 
 Application::Application(const Config &config)
     : config(config), timer_manager(config.get_timeout()) {
@@ -62,7 +62,7 @@ void Application::run() {
   }
 
   // Main event loop
-  while (is_running && !endpoint.is_transfer_complete()) {
+  while (is_running && !endpoint->is_transfer_complete()) {
     // Ask the timer manager how long until next retransmission timeout or
     // global timeout
     int poll_timeout_ms = timer_manager.get_next_timeout_ms();
