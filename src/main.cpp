@@ -10,12 +10,11 @@
 
 int main(int argc, char *const *argv) {
   try {
-    Config Config(argc, argv);
+    Config config(argc, argv);
 
-    // TODO: Implement Application
-    // Application app(config);
+    Application app(config);
 
-    // app.run();
+    app.run();
 
     return EX_OK;
 
