@@ -1,6 +1,8 @@
 #include "../../include/protocol/RdtReceiver.hpp"
 
 #include <cerrno>
+#include <chrono>
+#include <ctime>
 #include <fcntl.h>
 #include <iostream>
 #include <random>
@@ -47,12 +49,67 @@ bool RdtReceiver::is_transfer_complete() const {
 }
 
 void RdtReceiver::handle_network_event() {
+
+  /**
+   * | State       | Next States
+   * |-------------|
+   * | LISTEN      | SYN_RCVD
+   * | SYN_RCVD    | ESTABLISHED
+   * | ESTABLISHED |
+   * | LAST_ACK    |
+   * | CLOSED      |
+   */
+
   std::vector<uint8_t> buffer;
   struct sockaddr_storage src_addr;
   socklen_t src_addr_len;
 
   try {
-    return;
+    socket.receive(buffer, src_addr, src_addr_len);
+    Packet pkt = Packet::deserialize(buffer);
+
+    // Progress happened, else we would catch
+    timer_manager.register_progress();
+
+    // First packet
+    if (state == State::LISTEN && pkt.has_flag(Packet::FLAG_SYN)) {
+      socket.set_target(src_addr, src_addr_len);
+      connection_id = generate_connection_id();
+
+      last_sent_control_pkt.connection_id = connection_id;
+      last_sent_control_pkt.seq_num = 0;
+      last_sent_control_pkt.ack_num = pkt.seq_num;
+      last_sent_control_pkt.set_flag(Packet::FLAG_SYN);
+      last_sent_control_pkt.set_flag(Packet::FLAG_ACK);
+
+      auto serialized = last_sent_control_pkt.serialize();
+      socket.send(serialized);
+
+      waiting_for_control_ack = true;
+      last_sent_time = steady_clock::now();
+      timer_manager.set_retransmit_deadline(last_sent_time +
+                                            timer_manager.get_current_rto());
+
+      state = State::SYN_RCVD;
+      std::cerr << "[RECEIVER] SYN received. Sending SYN ACK id: "
+                << connection_id << "\n";
+      return;
+    }
+
+    // Verify the established connection_id
+    if (state != State::LISTEN && pkt.connection_id != connection_id) {
+      return; // Ignore
+    }
+
+    switch (state) {
+    case State::SYN_RCVD:
+    case State::ESTABLISHED:
+      break;
+    case State::LAST_ACK:
+      break;
+    default:
+      break;
+    }
 
   } catch (const std::exception &e) {
     // TODO:Log silently or ignore corrupted packets

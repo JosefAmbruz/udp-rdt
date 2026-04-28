@@ -2,11 +2,16 @@
 
 #include <cerrno>
 #include <chrono>
+#include <cstddef>
+#include <cstdint>
 #include <fcntl.h>
 #include <iostream>
+#include <iterator>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <system_error>
 #include <unistd.h>
+#include <utility>
 #include <vector>
 
 using namespace std::chrono;
@@ -38,7 +43,7 @@ RdtSender::RdtSender(UdpSocket &socket, TimerManager &timer_manager,
   slot.last_sent_time = steady_clock::now();
   window.push_back(slot);
 
-  state = State::SYN_SENT;
+  state = State::SYN_SENT; // Already should be set
   next_seq_num = 1;
 }
 
@@ -72,8 +77,65 @@ void RdtSender::handle_network_event() {
     timer_manager.register_progress();
 
     if (state == State::SYN_SENT) {
+      if (ack_pkt.has_flag(Packet::FLAG_SYN) &&
+          ack_pkt.has_flag(Packet::FLAG_ACK)) {
+        // Handshake completed, received SYN ACK
+        connection_id = ack_pkt.connection_id;
 
-      // TODO: implement
+        // Reply with ACK
+        Packet ack;
+        ack.connection_id = connection_id;
+        ack.set_flag(Packet::FLAG_ACK);
+        send_packet(ack);
+
+        // Clear the SYN from window
+        window.pop_front();
+        send_base = 1;
+        state = State::ESTABLISHED;
+        std::cerr << "[SENDER] Connection established, id: " << connection_id
+                  << "\n";
+      }
+    }
+
+    else if (state == State::ESTABLISHED || state == State::FIN_SENT) {
+      if (ack_pkt.connection_id != connection_id) {
+        return;
+      }
+
+      if (ack_pkt.has_flag(Packet::FLAG_ACK)) {
+        uint32_t acked_seq = ack_pkt.ack_num;
+
+        // FInd the packet in window and mark it
+        for (auto &slot : window) {
+          if (slot.packet.seq_num == acked_seq && !slot.is_acked) {
+            slot.is_acked = true;
+
+            auto rtt = duration_cast<milliseconds>(steady_clock::now() -
+                                                   slot.last_sent_time);
+            timer_manager.update_rtt(rtt);
+            break;
+          }
+        }
+
+        slide_window();
+
+        // If eof reached and sent all data, start teardown
+        if (state == State::ESTABLISHED && eof_reached && window.empty()) {
+          initiate_teardown();
+        }
+      }
+
+      // Handle server FIN
+      if (ack_pkt.has_flag(Packet::FLAG_FIN)) {
+        Packet fin_ack;
+        fin_ack.connection_id = connection_id;
+        fin_ack.ack_num = ack_pkt.seq_num;
+        fin_ack.set_flag(Packet::FLAG_ACK);
+        send_packet(fin_ack);
+
+        state = State::CLOSED;
+        std::cerr << "[SENDER] Transfer complete, connection closed.\n";
+      }
     }
   } catch (const std::exception &e) {
     // Corrupted packet received -> Ignore it
@@ -81,7 +143,41 @@ void RdtSender::handle_network_event() {
   }
 }
 
-void RdtSender::handle_io_event() {}
+void RdtSender::handle_io_event() {
+  if (state != State::ESTABLISHED || eof_reached ||
+      window.size() >= WINDOW_SIZE) {
+    return;
+  }
+
+  std::vector<uint8_t> payload_buf(Packet::MAX_PAYLOAD_SIZE); // 1180
+  // Read chunk from file
+  ssize_t bytes_read = ::read(io_fd, payload_buf.data(), payload_buf.size());
+
+  if (bytes_read < 0) {
+    throw std::system_error(errno, std::system_category(),
+                            "Failed to read input data");
+  } else if (bytes_read == 0) {
+    eof_reached = true;
+    if (window.empty()) {
+      initiate_teardown();
+    }
+    return;
+  }
+
+  payload_buf.resize(bytes_read);
+
+  Packet data_pkt;
+  data_pkt.connection_id = connection_id;
+  data_pkt.seq_num = next_seq_num++;
+  data_pkt.payload = std::move(payload_buf);
+
+  send_packet(data_pkt);
+
+  WindowSlot slot;
+  slot.packet = data_pkt;
+  slot.last_sent_time = steady_clock::now();
+  window.push_back(slot);
+}
 
 void RdtSender::handle_timeout() {}
 

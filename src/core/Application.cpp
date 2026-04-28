@@ -52,8 +52,9 @@ void Application::run() {
   fds[0].fd = socket.get_fd();
   fds[0].events = POLLIN; // Data ready to be read event
 
-  // If the endpoint has local file descriptor to monitor
-  // e.g., Sender reading a file.
+  // If the endpoint is sender, it will return fd for io file.
+  // In this case, we will increment the number of file descriptors
+  // and answer to io events in main loop
   int io_fd = endpoint->get_io_fd();
   if (io_fd != -1) {
     fds[1].fd = io_fd;
