@@ -179,12 +179,74 @@ void RdtSender::handle_io_event() {
   window.push_back(slot);
 }
 
-void RdtSender::handle_timeout() {}
+void RdtSender::handle_timeout() {
+  if (timer_manager.has_global_timeout_expired()) {
+    std::cerr << "Error: Global timeout exceeded. Terminating connection\n";
+    exit(1);
+  }
 
-void RdtSender::handle_interrupt() {}
+  // Retrannsmission time out expired -> retransmit unacked packets
+  auto now = steady_clock::now();
+  auto rto = timer_manager.get_current_rto();
+  bool retransmitted = false;
 
-void RdtSender::slide_window() {}
+  for (auto &slot : window) {
+    if (!slot.is_acked && (now - slot.last_sent_time) >= rto) {
+      send_packet(slot.packet);
+      slot.last_sent_time = steady_clock::now();
+      slot.retries++;
+      retransmitted = true;
+    }
+  }
 
-void RdtSender::send_packet(Packet &pkt) {}
+  if (retransmitted) {
+    // Backoff
+    timer_manager.backoff_rto();
+  }
+}
 
-void RdtSender::initiate_teardown() {}
+void RdtSender::handle_interrupt() {
+  if (state != State::CLOSED) {
+    Packet rst_pkt;
+    rst_pkt.connection_id = connection_id;
+    rst_pkt.set_flag(Packet::FLAG_RST);
+    send_packet(rst_pkt);
+  }
+}
+
+void RdtSender::slide_window() {
+  while (!window.empty() && window.front().is_acked) {
+    window.pop_front();
+    send_base++;
+  }
+
+  // Update TimerManager with the time from the oldest unacked packet
+  if (!window.empty()) {
+    timer_manager.set_retransmit_deadline(window.front().last_sent_time +
+                                          timer_manager.get_current_rto());
+
+  } else {
+    timer_manager.clear_retransmit_deadline();
+  }
+}
+
+void RdtSender::send_packet(Packet &pkt) {
+  auto data = pkt.serialize();
+  socket.send(data);
+}
+
+void RdtSender::initiate_teardown() {
+  Packet fin_pkt;
+  fin_pkt.connection_id = connection_id;
+  fin_pkt.seq_num = next_seq_num++;
+  fin_pkt.set_flag(Packet::FLAG_FIN);
+
+  send_packet(fin_pkt);
+
+  WindowSlot slot;
+  slot.packet = fin_pkt;
+  slot.last_sent_time = steady_clock::now();
+  window.push_back(slot);
+
+  state = State::FIN_SENT;
+}
