@@ -55,7 +55,7 @@ clean:
 
 # `make zip` - Packages everything into $(LOGIN).zip
 zip: clean
-	zip -r $(LOGIN).zip $(SRC_DIR) include scripts Makefile CHANGELOG.md LICENSE README.md
+	zip -r $(LOGIN).zip $(SRC_DIR) include Makefile CHANGELOG.md LICENSE README.md -x "*.git*"
 
 # `make test` - Builds and runs the testing framework
 test: $(TEST_TARGET)
