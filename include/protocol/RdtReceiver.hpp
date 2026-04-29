@@ -29,7 +29,7 @@ private:
   int io_fd = -1;
 
   static constexpr size_t WINDOW_SIZE = 64;
-  uint32_t rcv_base = 1;
+  uint32_t rcv_base = 1; // Seq number we expect
 
   // Buffer for packets that arrive out of order.
   // Key - Sequence Number

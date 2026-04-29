@@ -2,12 +2,14 @@
 
 #include <cerrno>
 #include <chrono>
-#include <ctime>
+#include <cstdlib>
 #include <fcntl.h>
 #include <iostream>
 #include <random>
+#include <sys/types.h>
 #include <system_error>
 #include <unistd.h>
+#include <utility>
 
 using namespace std::chrono;
 
@@ -103,9 +105,69 @@ void RdtReceiver::handle_network_event() {
 
     switch (state) {
     case State::SYN_RCVD:
+      if (pkt.has_flag(Packet::FLAG_ACK)) {
+        // Handshake completed
+        waiting_for_control_ack = false;
+        timer_manager.clear_retransmit_deadline();
+        state = State::ESTABLISHED;
+        std::cerr << "[RECEIVER] Connection established";
+      }
+      // There might be a case, where ACK is lost and the client is already
+      // sending data packets in which case the data packets need to be
+      // processed
+      [[fallthrough]];
     case State::ESTABLISHED:
+      if (pkt.has_flag(Packet::FLAG_FIN)) {
+        // Teardown initiated by sender
+        send_ack(pkt.seq_num);
+
+        // Send FIN immediately
+        last_sent_control_pkt = Packet();
+        last_sent_control_pkt.connection_id = connection_id;
+        last_sent_control_pkt.set_flag(Packet::FLAG_FIN);
+
+        auto serialized = last_sent_control_pkt.serialize();
+        socket.send(serialized);
+
+        waiting_for_control_ack = true;
+        last_sent_time = steady_clock::now();
+        timer_manager.set_retransmit_deadline(last_sent_time +
+                                              timer_manager.get_current_rto());
+
+        state = State::LAST_ACK;
+      } else if (!pkt.payload.empty()) {
+        // ACK the received packet
+        send_ack(pkt.seq_num);
+
+        // Check if it is a packet we expect or out of order one.
+        if (pkt.seq_num == rcv_base) {
+          // Write to disk
+          ssize_t written =
+              ::write(io_fd, pkt.payload.data(), pkt.payload.size());
+          if (written < 0) {
+            throw std::system_error(errno, std::system_category(),
+                                    "Failed to write data");
+          }
+
+          rcv_base++;
+          flush_buffer(); // Write any buffered continuous packets
+        } else if (pkt.seq_num > rcv_base &&
+                   (pkt.seq_num - rcv_base) <= WINDOW_SIZE) {
+          // Packet is within window but out of order -> save it
+          out_of_order_buffer[pkt.seq_num] = std::move(pkt.payload);
+        }
+
+        // If pkt.seq_num < rcv_base its a duplicate and we already sent ACK
+        // above.
+      }
       break;
     case State::LAST_ACK:
+      if (pkt.has_flag(Packet::FLAG_ACK)) {
+        waiting_for_control_ack = false;
+        timer_manager.clear_retransmit_deadline();
+        state = State::CLOSED;
+        std::cerr << "[RECEIVER] Transfer completed. Connection closed.";
+      }
       break;
     default:
       break;
@@ -120,11 +182,63 @@ void RdtReceiver::handle_io_event() {
   // Should never be called since get_io_fd() returns -1
 }
 
-void RdtReceiver::handle_timeout() {}
+void RdtReceiver::handle_timeout() {
+  if (timer_manager.has_global_timeout_expired()) {
+    std::cerr << "Error: Global timeout exceeded. Terminating connection";
+    exit(1);
+  }
 
-void RdtReceiver::handle_interrupt() {}
+  // RTO Expired
+  // Retransmit Server side control packets if lost
+  if (waiting_for_control_ack) {
+    auto now = steady_clock::now();
+    if ((now - last_sent_time) >= timer_manager.get_current_rto()) {
+      auto serialized = last_sent_control_pkt.serialize();
+      socket.send(serialized);
 
-void RdtReceiver::send_ack(uint32_t ack_num, uint16_t extra_flags) {}
+      last_sent_time = now;
+      timer_manager.backoff_rto();
+      timer_manager.set_retransmit_deadline(now +
+                                            timer_manager.get_current_rto());
+    }
+  }
+}
+
+void RdtReceiver::handle_interrupt() {
+  if (state != State::CLOSED && state != State::LISTEN) {
+    Packet rst_pkt;
+    rst_pkt.connection_id = connection_id;
+    rst_pkt.set_flag(Packet::FLAG_RST);
+    auto serialized = rst_pkt.serialize();
+    socket.send(serialized);
+  }
+}
+
+void RdtReceiver::send_ack(uint32_t ack_num, uint16_t extra_flags) {
+  Packet ack;
+  ack.connection_id = connection_id;
+  ack.ack_num = ack_num;
+  ack.set_flag(Packet::FLAG_ACK | extra_flags);
+
+  auto serialized = ack.serialize();
+  socket.send(serialized);
+}
+
+void RdtReceiver::flush_buffer() {
+  // Write any continuous packets waiting in the out of order buffer
+  while (out_of_order_buffer.find(rcv_base) != out_of_order_buffer.end()) {
+    const auto &payload = out_of_order_buffer[rcv_base];
+
+    ssize_t written = ::write(io_fd, payload.data(), payload.size());
+    if (written < 0) {
+      throw std::system_error(errno, std::system_category(),
+                              "Failed to write buffered data");
+    }
+
+    out_of_order_buffer.erase(rcv_base);
+    rcv_base++;
+  }
+}
 
 uint32_t RdtReceiver::generate_connection_id() {
   std::random_device rd;
