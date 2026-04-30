@@ -7,8 +7,6 @@
 #include <chrono>
 #include <cstdint>
 #include <deque>
-#include <optional>
-#include <string>
 #include <sys/types.h>
 
 class RdtSender : public RdtEndpoint {

@@ -1,4 +1,5 @@
 #include "../../include/protocol/RdtSender.hpp"
+#include "../../include/dbg.h"
 
 #include <cerrno>
 #include <chrono>
@@ -179,7 +180,9 @@ void RdtSender::handle_io_event() {
 
 void RdtSender::handle_timeout() {
   if (timer_manager.has_global_timeout_expired()) {
-    std::cerr << "Error: Global timeout exceeded. Terminating connection\n";
+    std::cerr << "Error: Global timeout exceeded. Terminating connection.\n";
+    // TODO: Should inform the Receiver if connection was established and exit?
+    handle_interrupt();
     exit(1);
   }
 
@@ -213,10 +216,14 @@ void RdtSender::handle_interrupt() {
 }
 
 void RdtSender::slide_window() {
+  dbg(send_base, next_seq_num, window.size());
+
   while (!window.empty() && window.front().is_acked) {
     window.pop_front();
     send_base++;
   }
+
+  dbg(send_base, window.size());
 
   // Update TimerManager with the time from the oldest unacked packet
   if (!window.empty()) {

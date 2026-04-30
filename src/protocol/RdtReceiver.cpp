@@ -105,18 +105,20 @@ void RdtReceiver::handle_network_event() {
 
     switch (state) {
     case State::SYN_RCVD:
+      dbg(state);
       if (pkt.has_flag(Packet::FLAG_ACK)) {
         // Handshake completed
         waiting_for_control_ack = false;
         timer_manager.clear_retransmit_deadline();
         state = State::ESTABLISHED;
-        std::cerr << "[RECEIVER] Connection established";
+        std::cerr << "[RECEIVER] Connection established.\n";
       }
       // There might be a case, where ACK is lost and the client is already
       // sending data packets in which case the data packets need to be
       // processed
       [[fallthrough]];
     case State::ESTABLISHED:
+      dbg(state);
       if (pkt.has_flag(Packet::FLAG_FIN)) {
         // Teardown initiated by sender
         send_ack(pkt.seq_num);
@@ -139,6 +141,7 @@ void RdtReceiver::handle_network_event() {
         // ACK the received packet
         send_ack(pkt.seq_num);
 
+        dbg(pkt.seq_num, pkt.payload.size(), rcv_base);
         // Check if it is a packet we expect or out of order one.
         if (pkt.seq_num == rcv_base) {
           // Write to disk
@@ -154,6 +157,8 @@ void RdtReceiver::handle_network_event() {
         } else if (pkt.seq_num > rcv_base &&
                    (pkt.seq_num - rcv_base) <= WINDOW_SIZE) {
           // Packet is within window but out of order -> save it
+          dbg("Out of order packet received", pkt.seq_num,
+              out_of_order_buffer.size());
           out_of_order_buffer[pkt.seq_num] = std::move(pkt.payload);
         }
 
@@ -162,6 +167,7 @@ void RdtReceiver::handle_network_event() {
       }
       break;
     case State::LAST_ACK:
+      dbg(state);
       if (pkt.has_flag(Packet::FLAG_ACK)) {
         waiting_for_control_ack = false;
         timer_manager.clear_retransmit_deadline();
@@ -174,6 +180,7 @@ void RdtReceiver::handle_network_event() {
     }
 
   } catch (const std::exception &e) {
+    dbg(state);
     // TODO:Log silently or ignore corrupted packets
   }
 }
@@ -185,6 +192,7 @@ void RdtReceiver::handle_io_event() {
 void RdtReceiver::handle_timeout() {
   if (timer_manager.has_global_timeout_expired()) {
     std::cerr << "Error: Global timeout exceeded. Terminating connection";
+    handle_interrupt();
     exit(1);
   }
 
