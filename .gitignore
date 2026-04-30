@@ -87,3 +87,9 @@ Mkfile.old
 dkms.conf
 
 ASSIGNMENT.md
+
+# ---> Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/

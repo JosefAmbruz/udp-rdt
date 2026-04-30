@@ -52,7 +52,7 @@ $(TARGET): $(PROD_OBJS)
 
 # `make clean` - Cleans everything
 clean:
-	rm -rf $(BUILD_DIR) $(TARGET) $(TEST_TARGET) $(DEBUG_TARGET) $(TEST_DEBUG_TARGET) $(LOGIN).zip
+	rm -rf $(BUILD_DIR) $(TARGET) $(TEST_TARGET) $(DEBUG_TARGET) $(TEST_DEBUG_TARGET) $(LOGIN).zip test_input.bin test_output.bin
 
 # `make zip` - Packages everything into $(LOGIN).zip
 zip: clean
@@ -60,8 +60,11 @@ zip: clean
 
 # `make test` - Builds and runs the testing framework
 test: $(TEST_TARGET) $(TARGET)
+	@echo "--- RUNNING UNIT TESTS (doctest) ---"
 	./$(TEST_TARGET)
-	python3 tests/integration_test.py
+	@echo ""
+	@echo "--- RUNNING INTEGRATION TESTS (python) ---"
+	python3 -m unittest discover -s tests -p "test_*.py"
 
 $(TEST_TARGET): $(TEST_OBJS)
 	$(CXX) $(CXXFLAGS) $(TEST_FLAGS) $^ -o $@ $(LDLIBS)
