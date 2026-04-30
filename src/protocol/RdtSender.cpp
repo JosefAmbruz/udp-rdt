@@ -71,6 +71,7 @@ void RdtSender::handle_network_event() {
   try {
     socket.receive(buffer, src_addr, src_addr_len);
     Packet ack_pkt = Packet::deserialize(buffer);
+    dbg(state, ack_pkt.flags, ack_pkt.ack_num, ack_pkt.seq_num);
 
     // Reset the global timeout
     timer_manager.register_progress();
@@ -91,6 +92,7 @@ void RdtSender::handle_network_event() {
         window.pop_front();
         send_base = 1;
         state = State::ESTABLISHED;
+        dbg(state);
         std::cerr << "[SENDER] Connection established, id: " << connection_id
                   << "\n";
       }
@@ -117,7 +119,7 @@ void RdtSender::handle_network_event() {
         }
 
         slide_window();
-
+        dbg(send_base, next_seq_num, window.size(), eof_reached);
         // If eof reached and sent all data, start teardown
         if (state == State::ESTABLISHED && eof_reached && window.empty()) {
           initiate_teardown();

@@ -44,6 +44,7 @@ void Application::run() {
   // Wait for up to 2 file descriptors
   // fds[0] = UDP Socket
   // fds[1] = Standard Input / File in case of Sender
+
   // Main event loop
   while (is_running && !endpoint->is_transfer_complete()) {
     // Refresh the poll checklist every iteration
@@ -65,7 +66,9 @@ void Application::run() {
     int poll_timeout_ms = timer_manager.get_next_timeout_ms();
 
     // Block until an event occurs or the timeout expires
+    dbg(num_fds, poll_timeout_ms); // is the poll waking up?
     int ret = ::poll(fds, num_fds, poll_timeout_ms);
+    dbg(ret, fds[0].revents, (num_fds > 1 ? fds[1].revents : 0));
 
     if (ret < 0) {
       if (errno == EINTR) {
@@ -88,11 +91,13 @@ void Application::run() {
     // revents = types of events that actually occured
     // revents & POLLIN = there is data to read event
     if (fds[0].revents & POLLIN) {
+      dbg("NETWORK EVENT");
       endpoint->handle_network_event();
     }
 
     // HANDLE I/O EVENTS
-    if (num_fds == 2 && (fds[1].revents & POLLIN)) {
+    if (num_fds == 2 && (fds[1].revents & (POLLIN | POLLHUP))) {
+      dbg("I/O EVENT");
       endpoint->handle_io_event();
     }
   }

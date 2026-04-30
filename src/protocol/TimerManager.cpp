@@ -1,10 +1,10 @@
 #include "../../include/protocol/TimerManager.hpp"
+#include "../../include/dbg.h"
 
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
-#include <ratio>
 
 using namespace std::chrono;
 
@@ -12,6 +12,7 @@ TimerManager::TimerManager(seconds global_timeout)
     : global_timeout(global_timeout), last_progress_time(steady_clock::now()) {}
 
 void TimerManager::register_progress() {
+  dbg("PROGRESS REGISTERED");
   last_progress_time = steady_clock::now();
 }
 

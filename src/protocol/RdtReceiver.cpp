@@ -69,6 +69,7 @@ void RdtReceiver::handle_network_event() {
   try {
     socket.receive(buffer, src_addr, src_addr_len);
     Packet pkt = Packet::deserialize(buffer);
+    dbg(state, pkt.flags, pkt.ack_num, pkt.seq_num);
 
     // Progress happened, else we would catch
     timer_manager.register_progress();
