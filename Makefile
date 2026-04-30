@@ -22,8 +22,9 @@ APP_MAIN = $(SRC_DIR)/main.cpp
 TEST_MAIN = $(SRC_DIR)/test_main.cpp
 
 # Filter sources for different builds
-# Production/Debug drops test_main.cpp. Tests drop main.cpp.
-PROD_SRCS = $(filter-out $(TEST_MAIN), $(ALL_SRCS))
+# Production/Debug drops test_main.cpp and any *_test.cpp files. Tests drop main.cpp.
+NON_TEST_SRCS = $(filter-out %_test.cpp, $(ALL_SRCS))
+PROD_SRCS = $(filter-out $(TEST_MAIN), $(NON_TEST_SRCS))
 TEST_SRCS = $(filter-out $(APP_MAIN), $(ALL_SRCS))
 
 # --- Object Files ---
@@ -58,8 +59,9 @@ zip: clean
 	zip -r $(LOGIN).zip $(SRC_DIR) include Makefile CHANGELOG.md LICENSE README.md -x "*.git*"
 
 # `make test` - Builds and runs the testing framework
-test: $(TEST_TARGET)
+test: $(TEST_TARGET) $(TARGET)
 	./$(TEST_TARGET)
+	python3 tests/integration_test.py
 
 $(TEST_TARGET): $(TEST_OBJS)
 	$(CXX) $(CXXFLAGS) $(TEST_FLAGS) $^ -o $@ $(LDLIBS)

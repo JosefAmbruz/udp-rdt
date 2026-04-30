@@ -44,26 +44,22 @@ void Application::run() {
   // Wait for up to 2 file descriptors
   // fds[0] = UDP Socket
   // fds[1] = Standard Input / File in case of Sender
-  struct pollfd fds[2];
-  int num_fds = 1; // Initializing the number of fds at 1 and conditionally
-                   // incrementing it when we need another file descriptor.
-
-  // Socket is monitored always
-  fds[0].fd = socket.get_fd();
-  fds[0].events = POLLIN; // Data ready to be read event
-
-  // If the endpoint is sender, it will return fd for io file.
-  // In this case, we will increment the number of file descriptors
-  // and answer to io events in main loop
-  int io_fd = endpoint->get_io_fd();
-  if (io_fd != -1) {
-    fds[1].fd = io_fd;
-    fds[1].events = POLLIN; // Data ready to be read event
-    num_fds = 2;            // Increment the number of file descriptors
-  }
-
   // Main event loop
   while (is_running && !endpoint->is_transfer_complete()) {
+    // Refresh the poll checklist every iteration
+    struct pollfd fds[2];
+    int num_fds = 1;
+
+    fds[0].fd = socket.get_fd();
+    fds[0].events = POLLIN;
+    // If the endpoint is Receiver, it does not read from file and returns -1
+    int io_fd = endpoint->get_io_fd();
+    if (io_fd != -1) {
+      fds[1].fd = io_fd;
+      fds[1].events = POLLIN;
+      num_fds = 2;
+    }
+
     // Ask the timer manager how long until next retransmission timeout or
     // global timeout
     int poll_timeout_ms = timer_manager.get_next_timeout_ms();
