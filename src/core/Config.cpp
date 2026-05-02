@@ -116,7 +116,6 @@ void Config::resolve_address() {
   hints.ai_socktype = SOCK_DGRAM; // We are using UDP
 
   std::string port_str = std::to_string(port);
-
   int status =
       getaddrinfo(target_ip.c_str(), port_str.c_str(), &hints, &result);
   if (status != 0) {

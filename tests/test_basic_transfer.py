@@ -19,7 +19,7 @@ class TestBasicTransfer(unittest.TestCase):
             self.assertTrue(harness.verify_integrity(), "Data integrity check failed")
 
     def test_empty_file_transfer(self):
-        """Tests transfer of an empty file (Requirement in ASSIGNMENT.md)."""
+        """Tests transfer of an empty file."""
         with RdtTestHarness(port=10002) as harness:
             harness.generate_random_data(0)
             harness.run_server()
@@ -29,7 +29,7 @@ class TestBasicTransfer(unittest.TestCase):
             self.assertTrue(harness.verify_integrity())
 
     def test_ipv6_transfer(self):
-        """Tests transfer over IPv6 loopback (Requirement in ASSIGNMENT.md)."""
+        """Tests transfer over IPv6 loopback."""
         with RdtTestHarness(port=10003) as harness:
             harness.generate_random_data(5)
             # Override server to use IPv6

@@ -206,6 +206,9 @@ void RdtSender::handle_timeout() {
     // Backoff
     timer_manager.backoff_rto();
   }
+
+  // Update the deadline to avoid busy-wait
+  slide_window();
 }
 
 void RdtSender::handle_interrupt() {
@@ -218,8 +221,9 @@ void RdtSender::handle_interrupt() {
 }
 
 void RdtSender::slide_window() {
-  dbg(send_base, next_seq_num, window.size());
+  dbg("SLIDING WINDOW", send_base, next_seq_num, window.size());
 
+  // Window cleanup, slide the window as much as possible.
   while (!window.empty() && window.front().is_acked) {
     window.pop_front();
     send_base++;
@@ -227,14 +231,21 @@ void RdtSender::slide_window() {
 
   dbg(send_base, window.size());
 
-  // Update TimerManager with the time from the oldest unacked packet
-  if (!window.empty()) {
-    timer_manager.set_retransmit_deadline(window.front().last_sent_time +
-                                          timer_manager.get_current_rto());
-
-  } else {
+  // Update TimerManager with the earliest retransmit deadline
+  if (window.empty()) {
     timer_manager.clear_retransmit_deadline();
+    return;
   }
+
+  auto earliest_last_sent = window.front().last_sent_time;
+  for (const auto &slot : window) {
+    if (!slot.is_acked && slot.last_sent_time < earliest_last_sent) {
+      earliest_last_sent = slot.last_sent_time;
+    }
+  }
+
+  timer_manager.set_retransmit_deadline(earliest_last_sent +
+                                        timer_manager.get_current_rto());
 }
 
 void RdtSender::send_packet(Packet &pkt) {
