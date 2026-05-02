@@ -105,7 +105,6 @@ void Application::run() {
   // Teardown
   if (!is_running) {
     std::cerr << "Application interrupted by signal. Tearing down...\n";
-    // TODO: the endpoint could send a final RST or FIN packet here
     endpoint->handle_interrupt();
   }
 }
