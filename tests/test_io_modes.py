@@ -59,6 +59,48 @@ class TestIoModes(unittest.TestCase):
 
             self.assertEqual(stdout_data, expected_data)
 
+    def test_stdin_to_stdout(self):
+        """Tests reading from stdin and writing to stdout."""
+        with RdtTestHarness(port=10014) as harness:
+            harness.generate_random_data(50)
+            
+            # Server writes to stdout
+            args_s = [
+                "./ipk-rdt",
+                "-s",
+                "-p",
+                "10014",
+                "-w",
+                "5",
+            ]
+            harness.server_proc = subprocess.Popen(
+                args_s, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+            time.sleep(0.2)
+
+            # Client reads from stdin
+            with open(harness.input_file, "rb") as f_in:
+                args_c = [
+                    "./ipk-rdt",
+                    "-c",
+                    "-a",
+                    "127.0.0.1",
+                    "-p",
+                    "10014",
+                    "-w",
+                    "5",
+                ]
+                harness.client_proc = subprocess.Popen(
+                    args_c, stdin=f_in, stderr=subprocess.PIPE, stdout=subprocess.PIPE
+                )
+                harness.client_proc.wait()
+
+            stdout_data, _ = harness.server_proc.communicate()
+            with open(harness.input_file, "rb") as f_in:
+                expected_data = f_in.read()
+            
+            self.assertEqual(stdout_data, expected_data)
+
     def test_large_file_transfer(self):
         """Tests transfer of a 1MB file."""
         with RdtTestHarness(port=10012) as harness:

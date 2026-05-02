@@ -55,16 +55,16 @@ void TimerManager::update_rtt(milliseconds measured_rtt) {
 
   // Bounds for the RTO
   // RFC suggests <1;60> second interval, but I feel 1s is too large for the
-  // assignment
+  // assignment. We limit max to 5s to stay within typical -w values.
   rto = std::max(rto, milliseconds(10));
-  rto = std::min(rto, milliseconds(60000));
+  rto = std::min(rto, milliseconds(5000));
 }
 
 // When the retransmission timer expires, RFC suggests backing off the timer
 // RFC 6298 step 5.5
 void TimerManager::backoff_rto() {
-  // Max bound is still 60 seconds
-  rto = std::min(rto * 2, milliseconds(60000));
+  // Max bound is 5 seconds
+  rto = std::min(rto * 2, milliseconds(5000));
 }
 
 milliseconds TimerManager::get_current_rto() const { return rto; }

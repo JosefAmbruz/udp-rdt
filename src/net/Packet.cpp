@@ -111,8 +111,6 @@ Packet Packet::deserialize(const std::vector<uint8_t> &data) {
 
 uint32_t Packet::calculate_crc32(const std::vector<uint8_t> &data) {
   uint32_t crc = 0xFFFFFFFF;
-  // TODO: standard crc32 calculation. I should replace this
-  // with optimal implementation from zlib.h
 
   // IEEE 802.3 standard bitwise CRC32
   // (Poly: 0xEDB88320)

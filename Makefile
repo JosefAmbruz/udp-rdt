@@ -1,7 +1,7 @@
 # --- Configuration ---
 CXX = g++
 CXXFLAGS = -std=c++20 -Iinclude -Wall -Wextra -Wpedantic
-LDLIBS = -lpcap # TODO: Check necessity
+LDLIBS = 
 LOGIN = xambruj00
 
 # Executable outputs

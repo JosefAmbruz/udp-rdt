@@ -44,6 +44,8 @@ RdtSender::RdtSender(UdpSocket &socket, TimerManager &timer_manager,
 
   state = State::SYN_SENT; // Already should be set
   next_seq_num = 1;
+
+  slide_window();
 }
 
 RdtSender::~RdtSender() {
@@ -178,6 +180,8 @@ void RdtSender::handle_io_event() {
   slot.packet = data_pkt;
   slot.last_sent_time = steady_clock::now();
   window.push_back(slot);
+
+  slide_window();
 }
 
 void RdtSender::handle_timeout() {
@@ -267,4 +271,5 @@ void RdtSender::initiate_teardown() {
   window.push_back(slot);
 
   state = State::FIN_SENT;
+  slide_window();
 }
