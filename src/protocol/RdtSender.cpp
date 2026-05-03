@@ -33,7 +33,6 @@ RdtSender::RdtSender(UdpSocket &socket, TimerManager &timer_manager,
   Packet syn_pkt;
   syn_pkt.set_flag(Packet::FLAG_SYN);
   syn_pkt.seq_num = 0;
-  // TODO: Maybe randomize the connection_id later
 
   send_packet(syn_pkt);
 
@@ -187,7 +186,6 @@ void RdtSender::handle_io_event() {
 void RdtSender::handle_timeout() {
   if (timer_manager.has_global_timeout_expired()) {
     std::cerr << "Error: Global timeout exceeded. Terminating connection.\n";
-    // TODO: Should inform the Receiver if connection was established and exit?
     handle_interrupt();
     exit(1);
   }

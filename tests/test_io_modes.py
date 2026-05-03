@@ -63,7 +63,7 @@ class TestIoModes(unittest.TestCase):
         """Tests reading from stdin and writing to stdout."""
         with RdtTestHarness(port=10014) as harness:
             harness.generate_random_data(50)
-            
+
             # Server writes to stdout
             args_s = [
                 "./ipk-rdt",
@@ -98,7 +98,7 @@ class TestIoModes(unittest.TestCase):
             stdout_data, _ = harness.server_proc.communicate()
             with open(harness.input_file, "rb") as f_in:
                 expected_data = f_in.read()
-            
+
             self.assertEqual(stdout_data, expected_data)
 
     def test_large_file_transfer(self):
