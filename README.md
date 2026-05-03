@@ -160,8 +160,8 @@ When `poll()` returns, the `Application` hands the event over to the appropriate
 stateDiagram-v2
     [*] --> SYN_SENT : Constructor sends SYN
 
-    SYN_SENT --> ESTABLISHED : Receive SYN-ACK / Send ACK
     SYN_SENT --> SYN_SENT : Timeout / Retransmit SYN
+    SYN_SENT --> ESTABLISHED : Receive SYN-ACK / Send ACK
 
     ESTABLISHED --> ESTABLISHED : Send Data / Receive ACKs
     ESTABLISHED --> ESTABLISHED : Receive SYN-ACK / Resend Handshake ACK
@@ -182,12 +182,11 @@ stateDiagram-v2
 
     LISTEN --> SYN_RCVD : Receive SYN / Send SYN-ACK
 
+    SYN_RCVD --> SYN_RCVD : Timeout / Retransmit SYN-ACK
     SYN_RCVD --> ESTABLISHED : Receive ACK
     SYN_RCVD --> ESTABLISHED : Receive Data (Implicit ACK)
-    SYN_RCVD --> SYN_RCVD : Timeout / Retransmit SYN-ACK
 
     ESTABLISHED --> ESTABLISHED : Receive Data / Send ACKs
-
     ESTABLISHED --> LAST_ACK : Receive FIN / Send ACK + FIN
 
     LAST_ACK --> CLOSED : Receive ACK
