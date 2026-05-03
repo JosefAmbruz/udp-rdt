@@ -177,6 +177,9 @@ make clean && make
 export PYTHONPATH=$PYTHONPATH:$(pwd)/tests
 
 # Baseline
+python3 -m unittest tests/test_io_modes.py -k test_baseline_file_transfer
+
+# Big File
 python3 -m unittest tests/test_io_modes.py -k test_larger_file_transfer
 
 # High loss
@@ -199,14 +202,13 @@ bash tests/test_netem.sh
 
 | Scenario   | Data Size | Network Conditions           | Time (s)  | Integrity (SHA-256) |
 |------------|-----------|------------------------------|-----------|---------------------|
-| Baseline   | 50 MB     | Ideal (No loss/delay)        | ~2.230s   | Match               |
-| High Loss  | 100 KB    | 15% Packet Loss              | ~5.480s*   | Match               |
+| Baseline   | 50 KB     | Ideal (No loss/delay)        | ~0.211s   | Match               |
+| Big File   | 50 MB     | Larger file (No loss/delay)  | ~2.285s   | Match               |
+| High Loss  | 50 KB     | 15% Packet Loss              | ~1.077s   | Match               |
 | Congested  | 50 KB     | 20ms Delay, 10ms Jitter      | ~0.852s   | Match               |
 | Adverse    | 50 KB     | 5% Loss, 5% Dup, 10% Reorder | ~0.738s   | Match               |
 | Empty File | 0 B       | Ideal                        | ~0.209s   | Match               |
 | netem      | 5 MB      | 10% Loss, 5% Dup, 20ms Jitter| ~12.494s  | Match               |
-
-\* Out of 14 runs of this test, there were two outliers of ~30s among mostly sub-zero times.
 
 **Measured Behavior Observations**
 * **RTO Adaptation:** During the "Congested" test (jitter/delay), the `TimerManager` was observed correctly adapting the RTO. The initial 500ms RTO smoothed out to account for network variance, preventing premature retransmissions while remaining responsive.
@@ -227,4 +229,8 @@ bash tests/test_netem.sh
 * Handshake uses fixed 500ms initial RTO
 
 ## References
-
+*   **RFC 6298:** "Computing TCP's Retransmission Timer." *Internet Engineering Task Force*. [Online].
+*   **RFC 768:** "User Datagram Protocol." *Internet Engineering Task Force*. [Online].
+*   **IEEE 802.3:** "CRC-32 Polynomial Specification" (used for packet integrity).
+*   **doctest:** "The fastest feature-rich C++11/14/17/20/23 single-header testing framework." [GitHub](https://github.com/doctest/doctest).
+*   **dbg-macro:** "A printf-style debugging macro for C++." [GitHub](https://github.com/sharkdp/dbg-macro). (The `dbg.h` header used for development logging).

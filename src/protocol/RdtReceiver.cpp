@@ -71,11 +71,14 @@ void RdtReceiver::handle_network_event() {
     Packet pkt = Packet::deserialize(buffer);
     dbg(state, pkt.flags, pkt.ack_num, pkt.seq_num);
 
-    // Progress happened, else we would catch
-    timer_manager.register_progress();
+    // Verify the established connection_id
+    if (state != State::LISTEN && pkt.connection_id != connection_id) {
+      return; // Ignore
+    }
 
     // First packet
     if (state == State::LISTEN && pkt.has_flag(Packet::FLAG_SYN)) {
+      timer_manager.register_progress();
       socket.set_target(src_addr, src_addr_len);
       connection_id = generate_connection_id();
 
@@ -99,15 +102,11 @@ void RdtReceiver::handle_network_event() {
       return;
     }
 
-    // Verify the established connection_id
-    if (state != State::LISTEN && pkt.connection_id != connection_id) {
-      return; // Ignore
-    }
-
     switch (state) {
     case State::SYN_RCVD:
       dbg(state);
       if (pkt.has_flag(Packet::FLAG_ACK)) {
+        timer_manager.register_progress();
         // Handshake completed
         waiting_for_control_ack = false;
         timer_manager.clear_retransmit_deadline();
@@ -121,6 +120,7 @@ void RdtReceiver::handle_network_event() {
     case State::ESTABLISHED:
       dbg(state);
       if (pkt.has_flag(Packet::FLAG_FIN)) {
+        timer_manager.register_progress();
         // Teardown initiated by sender
         send_ack(pkt.seq_num);
 
@@ -139,12 +139,23 @@ void RdtReceiver::handle_network_event() {
 
         state = State::LAST_ACK;
       } else if (!pkt.payload.empty()) {
+        // If we are in SYN_RCVD and receive data, it implies the peer
+        // received our SYN-ACK.
+        if (state == State::SYN_RCVD) {
+          timer_manager.register_progress();
+          waiting_for_control_ack = false;
+          timer_manager.clear_retransmit_deadline();
+          state = State::ESTABLISHED;
+          std::cerr << "[RECEIVER] Connection established via data.\n";
+        }
+
         // ACK the received packet
         send_ack(pkt.seq_num);
 
         dbg(pkt.seq_num, pkt.payload.size(), rcv_base);
         // Check if it is a packet we expect or out of order one.
         if (pkt.seq_num == rcv_base) {
+          timer_manager.register_progress();
           // Write to disk
           ssize_t written =
               ::write(io_fd, pkt.payload.data(), pkt.payload.size());
@@ -170,6 +181,7 @@ void RdtReceiver::handle_network_event() {
     case State::LAST_ACK:
       dbg(state);
       if (pkt.has_flag(Packet::FLAG_ACK)) {
+        timer_manager.register_progress();
         waiting_for_control_ack = false;
         timer_manager.clear_retransmit_deadline();
         state = State::CLOSED;

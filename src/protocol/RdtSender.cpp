@@ -104,6 +104,17 @@ void RdtSender::handle_network_event() {
         return;
       }
 
+      // If we receive a SYN-ACK while established, it means our previous
+      // handshake ACK was lost. Retransmit it.
+      if (ack_pkt.has_flag(Packet::FLAG_SYN) &&
+          ack_pkt.has_flag(Packet::FLAG_ACK)) {
+        Packet ack;
+        ack.connection_id = connection_id;
+        ack.set_flag(Packet::FLAG_ACK);
+        send_packet(ack);
+        return;
+      }
+
       if (ack_pkt.has_flag(Packet::FLAG_ACK)) {
         uint32_t acked_seq = ack_pkt.ack_num;
 

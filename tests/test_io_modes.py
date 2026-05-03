@@ -101,9 +101,20 @@ class TestIoModes(unittest.TestCase):
 
             self.assertEqual(stdout_data, expected_data)
 
+    def test_baseline_file_transfer(self):
+        """Tests transfer of a 50kB file."""
+        with RdtTestHarness(port=10012) as harness:
+            harness.generate_random_data(50)  # 1MB
+            harness.run_server()
+            client_ret = harness.run_client()
+
+            self.assertEqual(client_ret, 0)
+            harness.server_proc.wait()
+            self.assertTrue(harness.verify_integrity())
+
     def test_large_file_transfer(self):
         """Tests transfer of a 1MB file."""
-        with RdtTestHarness(port=10012) as harness:
+        with RdtTestHarness(port=10013) as harness:
             harness.generate_random_data(1024)  # 1MB
             harness.run_server()
             client_ret = harness.run_client()
@@ -114,7 +125,7 @@ class TestIoModes(unittest.TestCase):
 
     def test_larger_file_transfer(self):
         """Tests transfer of a 50MB file."""
-        with RdtTestHarness(port=10013, timeout=30) as harness:
+        with RdtTestHarness(port=10014, timeout=30) as harness:
             harness.generate_random_data(50 * 1024)  # 50MB
             harness.run_server()
             client_ret = harness.run_client()
