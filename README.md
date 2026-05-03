@@ -1,27 +1,91 @@
-# ipk-rdt
+# ipk-rdt: Reliable Data Transfer over UDP
 
-A simplified transport protocol inspired by TCP, implemented in user space above UDP.
+## Project Overview
+`ipk-rdt` is a user-space transport protocol implementation that provides reliable, ordered, and integrity-protected delivery of arbitrary byte streams over the unreliable UDP protocol. It is designed to emulate the core reliability features of TCP while adhering to specific project constraints, such as a 1200-byte maximum segment size.
 
-## Testing Strategy
+### Key Features:
+  * **Reliability**: Implements the *Selective Repeat* strategy to handle packet loss efficiently without unnecessary retransmissions of the entire window.
+  * **Adaptive Timing**: Uses the *RFC 6298* algorithm to calculate a dynamic Retransmission Timeout based on real-time Round Trip Time measurements.
+  * **Connection Management**: Employs a robust 3-way handshake for session establishment and a 4-step teardown for graceful termination.
+  * **Integrity**: Every packet is protected by an *IEEE 802.3 CRC32* checksum covering both the 20-byte header and the payload.
+  * **Flow Control**: Implements a sliding window of 64 segments with backoff mechanisms to handle local I/O bottlenecks.
+  * **Network Support**: Full dual-stack support for IPv4 and IPv6 addressing.
 
-The project uses a two-tier automated testing approach to ensure both internal logic correctness and end-to-end protocol resilience.
+## Build and Run
 
-### 1. Unit Testing
-Unit tests are implemented using the [doctest](https://github.com/doctest/doctest) framework. These tests focus on individual components:
-- **Packet handling:** Serialization, deserialization, and CRC32 verification.
-- **Timer Management:** Verification of retransmission triggers and timer accuracy.
-- **Protocol Logic:** Isolated testing of window management (GBN/SR) and ACK processing.
+### Prerequisites
+  * **Environment**: Linux (x86_64) with `g++` supporting `C++20`.
+  * **Tools**: `make`, `g++`, `awk`, `dd`.
+  * **Testing Dependencies**: `Python 3.10+`, `valgrind`, `iproute2` (for tc netem).
 
-Run unit tests with:
-```bash
-make test
+### Compilation
+To build the primary executable, run the following command in the project root:
+
+  ```bash
+  make
+  ```
+
+This produces the standalone binary `ipk-rdt`.
+
+### Basic Usage
+The application operates in either *server* (-s) or *client* (-c) mode.
+
+**Start the Server**:
+
+``` bash
+  ./ipk-rdt -s -p 9000 -o received_data.bin
+  -p: UDP port to listen on.
+  -o: Destination file (omitting this or using - defaults to stdout).
 ```
 
-### 2. Integration Testing
-System-level tests are implemented in Python to verify the protocol's behavior under real-world network conditions:
-- **Data Integrity:** Verification of byte-for-byte identical transfers using SHA-256 hashes.
-- **Network Resilience:** Simulation of packet loss, reordering, and corruption using `tc netem` or internal simulation.
-- **CLI Compliance:** Automated verification of all mandatory command-line arguments and I/O modes (files, stdin/stdout).
-- **Timeout Behavior:** Verification of the `-w` timeout implementation.
+**Start the Client**:
 
-The integration tests are automatically executed as part of the `make test` target.
+``` bash
+  ./ipk-rdt -c -a 127.0.0.1 -p 9000 -i source_data.bin
+  -a: Destination IPv4/IPv6 address or hostname.
+  -i: Source file (omitting this or using - defaults to stdin).
+```
+
+**Cleanup**
+To remove compiled object files, binaries, and temporary test artifacts:
+
+``` bash
+  make clean
+```
+
+**Execution Examples**
+Stdin to Stdout Transfer:
+
+``` bash
+  # Terminal 1 (Server)
+  ./ipk-rdt -s -p 9000
+
+  # Terminal 2 (Client)
+  echo "Hello IPK" | ./ipk-rdt -c -a 127.0.0.1 -p 9000
+```
+
+IPv6 Transfer with Timeout:
+
+``` bash
+  ./ipk-rdt -s -p 9000 -a ::1 -w 5
+  ./ipk-rdt -c -a ::1 -p 9000 -i large_file.zip -w 5
+```
+
+## Protocol Specification
+
+
+... diagrams here
+
+
+## Implementation Design
+
+
+## Testing and Performance
+
+
+## Known Limitations
+* **Fixed window size**
+* **Handshake uses fixed 500ms initial RTO**
+
+## References
+
