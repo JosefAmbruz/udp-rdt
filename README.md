@@ -77,7 +77,7 @@ IPv6 Transfer with Timeout:
 ... diagrams here
 
 ```mermaid
-sequence_diagram
+sequenceDiagram
   participant C as Client (Sender)
   participant S as Server (Receiver)
 
