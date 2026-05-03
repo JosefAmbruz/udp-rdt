@@ -210,11 +210,6 @@ bash tests/test_netem.sh
 | Empty File | 0 B       | Ideal                        | ~0.209s   | Match               |
 | netem      | 5 MB      | 10% Loss, 5% Dup, 20ms Jitter| ~12.494s  | Match               |
 
-**Measured Behavior Observations**
-* **RTO Adaptation:** During the "Congested" test (jitter/delay), the `TimerManager` was observed correctly adapting the RTO. The initial 500ms RTO smoothed out to account for network variance, preventing premature retransmissions while remaining responsive.
-* **Selective Repeat Efficiency:** Under heavy reordering, the Receiver successfully buffered out-of-order segments in the `std::map` and only flushed to disk when the sequence "hole" was filled, as verified by packet logs.
-* **Backpressure:** Large file tests (50MB) demonstrated stable memory usage due to the polling-based backpressure mechanism, confirming that the window size effectively throttles file reads.
-
 **Automated Test Suites**
 1. **Unit Tests (doctest):** Verifies CRC32 calculation, packet (de)serialization, and RFC 6298 mathematical correctness.
 2. **Integration Tests** (unittest): Automates 15 scenarios covering all I/O modes (stdin, stdout, files), IPv4/IPv6 dual-stack, and large-scale transfers.
