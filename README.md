@@ -146,9 +146,80 @@ The protocol uses a dynamic Retransmission TimeOut (RTO) to adapt to network con
 * Backpressure: The Sender uses the get_io_fd() mechanism to stop reading from the input file when the window is full (64 segments), resuming only when an ACK slides the window forward.
 
 ## Implementation Design
+The application is built using an Event Driven, Object Oriented architecture. Instead of using multiple threads and managing complex locking mechanism, the system relies on a single threaded execution loop managed by the **Application** class.
+The core of the system is the `poll()` system call. In every iteration of the main program loop (`Application::run()`), the program monitors two potential events:
+  1. network event - incoming data from the UDP socket, or
+  2. I/O event - availability of data in the input file, this event is specific for Sender.
+When `poll()` returns, the `Application` hands the event over to the appropriate handler in the `RdtEndpoint`, either `handle_network_event`, or `handle_io_event`.
+
+**State machine**
+`RdtSender` and `RdtReceiver` are implemented as finite state machines. Both of these classes inherit from a common `RdtEndpoint` interface, providing a polymorphic way of handling the network logic regardless of the application mode.
+
+TODO: State machine diagram
+
+**Timer Management**
+To avoid busy waiting, the `TimerManager` class handles the *retransmission timeout* (RTO) as well as the global progress timeout. The `get_next_timeout_ms()` method calculates the exact number of milliseconds remaining until the soonest of those two deadlines and passes it to the `poll()`. This allows the CPU to sleep when no action is required.
 
 
 ## Testing and Performance
+**Testing Environment**
+* **OS:** Linux 6.19.13-arch1-1
+* **Hardware:** Intel Core i5-6300U, 4 GiB of RAM :(
+* **Tools:** `tc netem`, `valgrind`, `sha256sum`
+
+*Verified within the official Nix devShell*
+
+**Performance Measurements**
+
+These commands were used for the performance testing:
+```bash
+make clean && make
+export PYTHONPATH=$PYTHONPATH:$(pwd)/tests
+
+# Baseline
+python3 -m unittest tests/test_io_modes.py -k test_larger_file_transfer
+
+# High loss
+python3 -m unittest tests/test_resilience.py -k test_packet_loss
+
+# Congested
+python3 -m unittest tests/test_resilience.py -k test_jitter_and_delay
+
+# Adverse
+python3 -m unittest tests/test_resilience.py -k test_combined_impairments
+
+# Empty file
+python3 -m unittest tests/test_basic_transfer.py -k test_empty_file_transfer
+
+# netem
+bash tests/test_netem.sh
+
+
+```
+
+| Scenario   | Data Size | Network Conditions           | Time (s)  | Integrity (SHA-256) |
+|------------|-----------|------------------------------|-----------|---------------------|
+| Baseline   | 50 MB     | Ideal (No loss/delay)        | ~2.230s   | Match               |
+| High Loss  | 100 KB    | 15% Packet Loss              | ~5.480s*   | Match               |
+| Congested  | 50 KB     | 20ms Delay, 10ms Jitter      | ~0.852s   | Match               |
+| Adverse    | 50 KB     | 5% Loss, 5% Dup, 10% Reorder | ~0.738s   | Match               |
+| Empty File | 0 B       | Ideal                        | ~0.209s   | Match               |
+| netem      | 5 MB      | 10% Loss, 5% Dup, 20ms Jitter| ~12.494s  | Match               |
+
+\* Out of 14 runs of this test, there were two outliers of ~30s among mostly sub-zero times.
+
+**Measured Behavior Observations**
+* **RTO Adaptation:** During the "Congested" test (jitter/delay), the `TimerManager` was observed correctly adapting the RTO. The initial 500ms RTO smoothed out to account for network variance, preventing premature retransmissions while remaining responsive.
+* **Selective Repeat Efficiency:** Under heavy reordering, the Receiver successfully buffered out-of-order segments in the `std::map` and only flushed to disk when the sequence "hole" was filled, as verified by packet logs.
+* **Backpressure:** Large file tests (50MB) demonstrated stable memory usage due to the polling-based backpressure mechanism, confirming that the window size effectively throttles file reads.
+
+**Automated Test Suites**
+1. **Unit Tests (doctest):** Verifies CRC32 calculation, packet (de)serialization, and RFC 6298 mathematical correctness.
+2. **Integration Tests** (unittest): Automates 15 scenarios covering all I/O modes (stdin, stdout, files), IPv4/IPv6 dual-stack, and large-scale transfers.
+3. **Resilience Proxy:** A custom Python UDP proxy (tests/rdt_proxy.py) allows for impairment testing in environments where sudo for tc is unavailable.
+4. **Valgrind Suite:** The make test-valgrind target runs the full protocol lifecycle under Memcheck.
+    * Result: 0 bytes in 0 blocks definitely lost.
+5. **Kernel Impairment (tc netem):** The tests/test_netem.sh script provides the final validation using real Linux Kernel traffic shaping, simulating 10% loss and 10% reordering.
 
 
 ## Known Limitations
