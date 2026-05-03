@@ -42,7 +42,7 @@ DEBUG_FLAGS      = -g -O0 -DDOCTEST_CONFIG_DISABLE
 TEST_FLAGS       = -O0
 TEST_DEBUG_FLAGS = -g -O0
 
-.PHONY: all clean zip test debug test-debug NixDevShellName
+.PHONY: all clean zip test test-valgrind debug test-debug NixDevShellName
 
 # `make` - Builds the standard executable
 all: $(TARGET)
@@ -65,6 +65,14 @@ test: $(TEST_TARGET) $(TARGET)
 	@echo ""
 	@echo "--- RUNNING INTEGRATION TESTS (python) ---"
 	python3 -m unittest discover -s tests -p "test_*.py"
+	@echo ""
+	@echo "--- RUNNING OS-LEVEL RESILIENCE TESTS (netem) ---"
+	@bash tests/test_netem.sh
+
+# `make test-valgrind` - Runs memory leak tests
+test-valgrind: $(TARGET)
+	@echo "--- RUNNING MEMORY LEAK TESTS (valgrind) ---"
+	@bash tests/test_valgrind.sh
 
 $(TEST_TARGET): $(TEST_OBJS)
 	$(CXX) $(CXXFLAGS) $(TEST_FLAGS) $^ -o $@ $(LDLIBS)
