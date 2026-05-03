@@ -3,14 +3,6 @@
 ## Project Overview
 `ipk-rdt` is a user-space transport protocol implementation that provides reliable, ordered, and integrity-protected delivery of arbitrary byte streams over the unreliable UDP protocol. It is designed to emulate the core reliability features of TCP while adhering to specific project constraints, such as a 1200-byte maximum segment size.
 
-### Key Features:
-  * **Reliability**: Implements the *Selective Repeat* strategy to handle packet loss efficiently without unnecessary retransmissions of the entire window.
-  * **Adaptive Timing**: Uses the *RFC 6298* algorithm to calculate a dynamic Retransmission Timeout based on real-time Round Trip Time measurements.
-  * **Connection Management**: Employs a robust 3-way handshake for session establishment and a 4-step teardown for graceful termination.
-  * **Integrity**: Every packet is protected by an *IEEE 802.3 CRC32* checksum covering both the 20-byte header and the payload.
-  * **Flow Control**: Implements a sliding window of 64 segments with backoff mechanisms to handle local I/O bottlenecks.
-  * **Network Support**: Full dual-stack support for IPv4 and IPv6 addressing.
-
 ## Build and Run
 
 ### Prerequisites
