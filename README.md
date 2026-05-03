@@ -76,6 +76,34 @@ IPv6 Transfer with Timeout:
 
 ... diagrams here
 
+sequence_diagram
+  participant C as Client (Sender)
+  participant S as Server (Receiver)
+
+  Note over C,S: 3-Way Handshake
+  C->>S: SYN (seq=0)
+  S->>C: SYN-ACK (seq=0, ack=0, conn_id=123)
+  C->>S: ACK (ack=0, conn_id=123)
+
+  Note over C,S: Data Transfer (Selective Repeat)
+  C->>S: Data (seq=1, payload=...)
+  S->>C: ACK (ack=1)
+
+  Note right of S: Packet 2 is lost
+  C-xS: Data (seq=2)
+  C->>S: Data (seq=3)
+  S->>C: ACK (ack=3)
+
+  Note left of C: Timer expires for seq=2
+  C->>S: Retransmit Data (seq=2)
+  S->>C: ACK (ack=2)
+
+  Note over C,S: Teardown
+  C->>S: FIN (seq=4)
+  S->>C: ACK (ack=4)
+  S->>C: FIN (seq=X)
+  C->>S: ACK (ack=X)
+
 
 ## Implementation Design
 
