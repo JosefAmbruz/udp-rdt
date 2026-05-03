@@ -21,9 +21,9 @@
 ### Compilation
 To build the primary executable, run the following command in the project root:
 
-  ```bash
-  make
-  ```
+```bash
+make
+```
 
 This produces the standalone binary `ipk-rdt`.
 
@@ -33,42 +33,42 @@ The application operates in either *server* (-s) or *client* (-c) mode.
 **Start the Server**:
 
 ``` bash
-  ./ipk-rdt -s -p 9000 -o received_data.bin
-  -p: UDP port to listen on.
-  -o: Destination file (omitting this or using - defaults to stdout).
+./ipk-rdt -s -p 9000 -o received_data.bin
+-p: UDP port to listen on.
+-o: Destination file (omitting this or using - defaults to stdout).
 ```
 
 **Start the Client**:
 
 ``` bash
-  ./ipk-rdt -c -a 127.0.0.1 -p 9000 -i source_data.bin
-  -a: Destination IPv4/IPv6 address or hostname.
-  -i: Source file (omitting this or using - defaults to stdin).
+./ipk-rdt -c -a 127.0.0.1 -p 9000 -i source_data.bin
+-a: Destination IPv4/IPv6 address or hostname.
+-i: Source file (omitting this or using - defaults to stdin).
 ```
 
 **Cleanup**
 To remove compiled object files, binaries, and temporary test artifacts:
 
 ``` bash
-  make clean
+make clean
 ```
 
 **Execution Examples**
 Stdin to Stdout Transfer:
 
 ``` bash
-  # Terminal 1 (Server)
-  ./ipk-rdt -s -p 9000
+# Terminal 1 (Server)
+./ipk-rdt -s -p 9000
 
-  # Terminal 2 (Client)
-  echo "Hello IPK" | ./ipk-rdt -c -a 127.0.0.1 -p 9000
+# Terminal 2 (Client)
+echo "Hello IPK" | ./ipk-rdt -c -a 127.0.0.1 -p 9000
 ```
 
 IPv6 Transfer with Timeout:
 
 ``` bash
-  ./ipk-rdt -s -p 9000 -a ::1 -w 5
-  ./ipk-rdt -c -a ::1 -p 9000 -i large_file.zip -w 5
+./ipk-rdt -s -p 9000 -a ::1 -w 5
+./ipk-rdt -c -a ::1 -p 9000 -i large_file.zip -w 5
 ```
 
 ## Protocol Specification
@@ -84,8 +84,8 @@ IPv6 Transfer with Timeout:
 
 
 ## Known Limitations
-* **Fixed window size**
-* **Handshake uses fixed 500ms initial RTO**
+* Fixed window size
+* Handshake uses fixed 500ms initial RTO
 
 ## References
 
