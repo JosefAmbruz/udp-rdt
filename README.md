@@ -76,6 +76,7 @@ IPv6 Transfer with Timeout:
 
 ... diagrams here
 
+```mermaid
 sequence_diagram
   participant C as Client (Sender)
   participant S as Server (Receiver)
@@ -103,6 +104,7 @@ sequence_diagram
   S->>C: ACK (ack=4)
   S->>C: FIN (seq=X)
   C->>S: ACK (ack=X)
+```
 
 
 ## Implementation Design
