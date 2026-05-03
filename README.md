@@ -155,7 +155,46 @@ When `poll()` returns, the `Application` hands the event over to the appropriate
 **State machine**
 `RdtSender` and `RdtReceiver` are implemented as finite state machines. Both of these classes inherit from a common `RdtEndpoint` interface, providing a polymorphic way of handling the network logic regardless of the application mode.
 
-TODO: State machine diagram
+**Sender state machine**
+```mermaid
+stateDiagram-v2
+    [*] --> SYN_SENT : Constructor sends SYN
+
+    SYN_SENT --> ESTABLISHED : Receive SYN-ACK / Send ACK
+    SYN_SENT --> SYN_SENT : Timeout / Retransmit SYN
+
+    ESTABLISHED --> ESTABLISHED : Send Data / Receive ACKs
+    ESTABLISHED --> ESTABLISHED : Receive SYN-ACK / Resend Handshake ACK
+
+    ESTABLISHED --> FIN_SENT : EOF reached & Window Empty / Send FIN
+
+    FIN_SENT --> CLOSED : Receive FIN / Send ACK
+
+    ESTABLISHED --> CLOSED : Receive FIN / Send ACK (Passive Close)
+
+    CLOSED --> [*]
+```
+
+**Receiver state machine**
+```mermaid
+stateDiagram-v2
+    [*] --> LISTEN : Constructor wait
+
+    LISTEN --> SYN_RCVD : Receive SYN / Send SYN-ACK
+
+    SYN_RCVD --> ESTABLISHED : Receive ACK
+    SYN_RCVD --> ESTABLISHED : Receive Data (Implicit ACK)
+    SYN_RCVD --> SYN_RCVD : Timeout / Retransmit SYN-ACK
+
+    ESTABLISHED --> ESTABLISHED : Receive Data / Send ACKs
+
+    ESTABLISHED --> LAST_ACK : Receive FIN / Send ACK + FIN
+
+    LAST_ACK --> CLOSED : Receive ACK
+    LAST_ACK --> LAST_ACK : Timeout / Retransmit FIN
+
+    CLOSED --> [*]
+```
 
 **Timer Management**
 To avoid busy waiting, the `TimerManager` class handles the *retransmission timeout* (RTO) as well as the global progress timeout. The `get_next_timeout_ms()` method calculates the exact number of milliseconds remaining until the soonest of those two deadlines and passes it to the `poll()`. This allows the CPU to sleep when no action is required.
