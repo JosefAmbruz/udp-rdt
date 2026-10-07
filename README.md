@@ -8,30 +8,6 @@
 
 ---
 
-## Visuals & Demo
-
-```
-+---------------------------------------------------------------------------------+
-| SERVER TERMINAL ($ ./udp-rdt -s -p 9000 -o received.bin)                        |
-| [RECEIVER] SYN received. Sending SYN-ACK id: 2841920145                         |
-| [RECEIVER] Connection established.                                              |
-| [RECEIVER] Transfer completed. Connection closed.                               |
-+---------------------------------------------------------------------------------+
-| CLIENT TERMINAL ($ ./udp-rdt -c -a 127.0.0.1 -p 9000 -i dataset.bin)            |
-| [SENDER] Connection established, id: 2841920145                                 |
-| [SENDER] Transfer complete, connection closed.                                  |
-+---------------------------------------------------------------------------------+
-| INTEGRITY VERIFICATION                                                          |
-| $ sha256sum dataset.bin received.bin                                            |
-| e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 dataset.bin   |
-| e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 received.bin  |
-| -> SHA-256 MATCH VERIFIED (100% Bit-Exact Transfer)                            |
-+---------------------------------------------------------------------------------+
-```
-*(CLI recording placeholder: asciinema / demo GIF demo_transfer.gif)*
-
----
-
 ## Architecture & Key Highlights
 
 `udp-rdt` implements transport-layer reliability mechanisms directly in user space on top of raw UDP sockets. It emulates TCP's reliability guarantees while operating within constrained datagram boundaries (1200-byte max segment size).
@@ -68,6 +44,7 @@
 ```
 
 ### Key Technical Highlights
+
 - **Single-Threaded Event Loop with `poll()`**: Both network socket activity and local file descriptors are multiplexed in an asynchronous `poll()` loop (`Application::run`). This eliminates lock contention and thread synchronization overhead.
 - **Selective Repeat (SR) ARQ**: Segments are uniquely indexed by 32-bit sequence numbers. The sender manages a sliding window deque (default capacity: 64 segments), while the receiver buffers out-of-order packets in an ordered red-black tree (`std::map`), flushing to disk as soon as missing gaps are filled.
 - **Adaptive Retransmission Timeout (RFC 6298)**: Dynamic RTO calculation incorporates Smoothed Round-Trip Time ($SRTT$) and Round-Trip Time Variation ($RTTVAR$). Exponential backoff ($RTO \times 2$, bounded between 10ms and 5s) handles network congestion.
@@ -101,7 +78,7 @@ Multi-byte fields are transmitted in Network Byte Order (Big Endian).
 ```
 
 | Offset (Bytes) | Field Name | Size | Description |
-|:---------------|:-----------|:-----|:------------|
+| :--------------- | :----------- | :----- | :------------ |
 | `0` | Connection ID | 4 B | Unique 32-bit session identifier generated during handshake |
 | `4` | Sequence Number | 4 B | Monotonically increasing segment identifier |
 | `8` | Acknowledgment Number | 4 B | Sequence number being confirmed by peer |
@@ -177,24 +154,29 @@ stateDiagram-v2
 ## Quickstart & Build Instructions
 
 ### Prerequisites
+
 - Linux (x86_64) with `g++` supporting C++20
 - `make`, `python3` (3.10+)
 - Optional: `valgrind`, `iproute2` (for kernel-level netem emulation)
 
 ### 1. Build
+
 ```bash
 git clone https://github.com/josefambruz/udp-rdt.git
 cd udp-rdt
 make
 ```
+
 This compiles the release binary `udp-rdt` with `-O3` optimizations.
 
 For all available make targets:
+
 ```bash
 make help
 ```
 
 ### 2. Run Test Suites
+
 ```bash
 # Run unit tests and Python integration test suite (16 scenarios)
 make test
@@ -211,18 +193,22 @@ sudo make test-netem
 ## Usage Examples
 
 ### Server Mode (`-s`)
+
 ```bash
 ./udp-rdt -s -p <PORT> [-a <BIND_ADDRESS>] [-o <OUTPUT_FILE>] [-w <TIMEOUT>]
 ```
+
 - `-p`: Port to listen on.
 - `-a`: Optional bind address (defaults to dual-stack IPv4/IPv6 `INADDR_ANY`).
 - `-o`: Output destination file (defaults to `stdout` if omitted or `-`).
 - `-w`: Maximum idle progress timeout in seconds (default: 1s).
 
 ### Client Mode (`-c`)
+
 ```bash
 ./udp-rdt -c -a <DEST_ADDRESS> -p <PORT> [-i <INPUT_FILE>] [-w <TIMEOUT>]
 ```
+
 - `-a`: Destination IP address or hostname (**required**).
 - `-p`: Destination port (**required**).
 - `-i`: Source file path (defaults to `stdin` if omitted or `-`).
@@ -231,6 +217,7 @@ sudo make test-netem
 ### Execution Scenarios
 
 #### 1. File Transfer
+
 ```bash
 # Terminal 1: Receiver
 ./udp-rdt -s -p 9000 -o received_file.bin
@@ -240,6 +227,7 @@ sudo make test-netem
 ```
 
 #### 2. Unix Pipeline Streaming (`stdin` to `stdout`)
+
 ```bash
 # Terminal 1: Receiver writes stream directly to decompression tool
 ./udp-rdt -s -p 9000 | tar -xzvf -
@@ -249,6 +237,7 @@ tar -czvf - ./data | ./udp-rdt -c -a 127.0.0.1 -p 9000
 ```
 
 #### 3. Dual-Stack IPv6 Transfer
+
 ```bash
 # Receiver listening on IPv6 localhost
 ./udp-rdt -s -p 9000 -a ::1 -o output.bin -w 10
@@ -264,12 +253,12 @@ tar -czvf - ./data | ./udp-rdt -c -a 127.0.0.1 -p 9000
 Tested on Linux 6.19 x86_64 using the automated integration and traffic proxy suite:
 
 | Scenario | Payload Size | Impairment Profile | Elapsed Time | SHA-256 Verification |
-|:---|:---|:---|:---|:---|
+| :--- | :--- | :--- | :--- | :--- |
 | **Baseline File Transfer** | 50 KB | Ideal Loopback (0% loss, 0ms delay) | ~0.21s | **Exact Match** |
 | **High Throughput** | 50 MB | Ideal Loopback (0% loss, 0ms delay) | ~2.28s | **Exact Match** |
 | **Heavy Packet Loss** | 50 KB | 15% Random Drop Rate | ~1.08s | **Exact Match** |
 | **High Jitter & Delay** | 50 KB | 20ms Base Delay, $\pm$10ms Jitter | ~0.85s | **Exact Match** |
-| **Adverse Network Conditions**| 50 KB | 5% Loss, 5% Duplication, 10% Reordering | ~0.74s | **Exact Match** |
+| **Adverse Network Conditions** | 50 KB | 5% Loss, 5% Duplication, 10% Reordering | ~0.74s | **Exact Match** |
 | **Empty File Boundary** | 0 Bytes | Clean EOF Handshake | ~0.21s | **Exact Match** |
 | **Kernel `tc netem`** | 5 MB | 10% Loss, 5% Dup, 20ms Delay, 10ms Jitter | ~12.49s | **Exact Match** |
 
