@@ -1,4 +1,4 @@
-#include "../../include/net/Packet.hpp"
+#include "net/Packet.hpp"
 
 #include <arpa/inet.h>
 #include <cstdint>

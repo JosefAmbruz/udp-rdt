@@ -1,4 +1,5 @@
-#include "../../include/protocol/RdtReceiver.hpp"
+#include "protocol/RdtReceiver.hpp"
+#include "dbg.h"
 
 #include <cerrno>
 #include <chrono>
@@ -185,16 +186,16 @@ void RdtReceiver::handle_network_event() {
         waiting_for_control_ack = false;
         timer_manager.clear_retransmit_deadline();
         state = State::CLOSED;
-        std::cerr << "[RECEIVER] Transfer completed. Connection closed.";
+        std::cerr << "[RECEIVER] Transfer completed. Connection closed.\n";
       }
       break;
     default:
       break;
     }
 
-  } catch (const std::exception &e) {
+  } catch (const std::exception &) {
     dbg(state);
-    // TODO:Log silently or ignore corrupted packets
+    // Malformed or corrupted packets are silently discarded
   }
 }
 
@@ -204,7 +205,7 @@ void RdtReceiver::handle_io_event() {
 
 void RdtReceiver::handle_timeout() {
   if (timer_manager.has_global_timeout_expired()) {
-    std::cerr << "Error: Global timeout exceeded. Terminating connection";
+    std::cerr << "Error: Global timeout exceeded. Terminating connection.\n";
     handle_interrupt();
     exit(1);
   }

@@ -1,5 +1,5 @@
-#include "../../include/protocol/TimerManager.hpp"
-#include "../../include/dbg.h"
+#include "protocol/TimerManager.hpp"
+#include "dbg.h"
 
 #include <algorithm>
 #include <chrono>
@@ -47,15 +47,15 @@ void TimerManager::update_rtt(milliseconds measured_rtt) {
         static_cast<long long>(0.75 * rttvar.count() + 0.25 * diff));
 
     srtt = milliseconds(static_cast<long long>(0.875 * srtt.count() +
-                                               0.125 * measured_rtt.count()));
+                                                0.125 * measured_rtt.count()));
   }
 
   // RTO <- SRTT + max (G, K*RTTVAR)
   rto = srtt + 4 * rttvar;
 
   // Bounds for the RTO
-  // RFC suggests <1;60> second interval, but I feel 1s is too large for the
-  // assignment. We limit max to 5s to stay within typical -w values.
+  // RFC 6298 suggests [1s, 60s]; we clamp to [10ms, 5s] for rapid recovery
+  // on low-latency links while respecting the user-configured timeout limits.
   rto = std::max(rto, milliseconds(10));
   rto = std::min(rto, milliseconds(5000));
 }

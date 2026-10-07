@@ -10,11 +10,12 @@ from typing import Optional, List
 
 class RdtTestHarness:
     """
-    A robust test harness for ipk-rdt that ensures clean process lifecycle
+    A robust test harness for udp-rdt that ensures clean process lifecycle
     and data integrity verification.
     """
 
-    def __init__(self, port: int = 9999, timeout: int = 5):
+    def __init__(self, port: int = 9999, timeout: int = 5, binary: Optional[str] = None):
+        self.binary = binary or os.environ.get("RDT_BIN", "./udp-rdt")
         self.port = port
         self.timeout = timeout
         self.server_proc: Optional[subprocess.Popen] = None
@@ -69,7 +70,7 @@ class RdtTestHarness:
     def run_server(self, extra_args: List[str] = None):
         """Starts the server process."""
         args = [
-            "./ipk-rdt",
+            self.binary,
             "-s",
             "-p",
             str(self.port),
@@ -89,7 +90,7 @@ class RdtTestHarness:
     def run_client(self, extra_args: List[str] = None):
         """Starts the client process and waits for completion."""
         args = [
-            "./ipk-rdt",
+            self.binary,
             "-c",
             "-a",
             "127.0.0.1",

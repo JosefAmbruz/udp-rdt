@@ -1,5 +1,5 @@
-#include "../../include/doctest.h"
-#include "../../include/net/Packet.hpp"
+#include "doctest.h"
+#include "net/Packet.hpp"
 #include <vector>
 #include <stdexcept>
 

@@ -35,7 +35,7 @@ public:
   /**
    * @brief CLIENT MODE: Creates the socket and sets the destination address
    * @param addr The resolved address
-   * @param addr_len The lenght of the address
+   * @param addr_len The length of the address
    */
   void set_target(const struct sockaddr_storage &addr, socklen_t addr_len);
 
@@ -47,14 +47,21 @@ public:
   ssize_t send(const std::vector<uint8_t> &data);
 
   /**
-   * @brief Sends data to a specific destination (used by server to reply to
-   * clients).
+   * @brief Sends data to a specific destination (used by server to reply to clients).
+   * @param data The raw bytes to send.
+   * @param dest_addr Destination address structure.
+   * @param addr_len Length of the destination address structure.
+   * @return The number of bytes sent.
    */
   ssize_t send_to(const std::vector<uint8_t> &data,
                   const struct sockaddr_storage &dest_addr, socklen_t addr_len);
 
   /**
-   *
+   * @brief Receives an incoming datagram from the network.
+   * @param buffer Output byte buffer populated with received datagram payload.
+   * @param src_addr Output address structure populated with sender's address.
+   * @param src_addr_len Input/output length of the source address structure.
+   * @return Number of bytes received.
    */
   ssize_t receive(std::vector<uint8_t> &buffer,
                   struct sockaddr_storage &src_addr, socklen_t &src_addr_len);

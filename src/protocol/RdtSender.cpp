@@ -1,5 +1,5 @@
-#include "../../include/protocol/RdtSender.hpp"
-#include "../../include/dbg.h"
+#include "protocol/RdtSender.hpp"
+#include "dbg.h"
 
 #include <cerrno>
 #include <chrono>
@@ -118,7 +118,7 @@ void RdtSender::handle_network_event() {
       if (ack_pkt.has_flag(Packet::FLAG_ACK)) {
         uint32_t acked_seq = ack_pkt.ack_num;
 
-        // FInd the packet in window and mark it
+        // Find the packet in window and mark it
         for (auto &slot : window) {
           if (slot.packet.seq_num == acked_seq && !slot.is_acked) {
             slot.is_acked = true;
@@ -201,7 +201,7 @@ void RdtSender::handle_timeout() {
     exit(1);
   }
 
-  // Retrannsmission time out expired -> retransmit unacked packets
+  // Retransmission timeout expired -> retransmit unacked packets
   auto now = steady_clock::now();
   auto rto = timer_manager.get_current_rto();
   bool retransmitted = false;

@@ -30,7 +30,7 @@ class TestResilience(unittest.TestCase):
                 # actually let's just use harness.run_client with extra_args
                 # but we need to make sure -p server_port is not there
                 args = [
-                    "./ipk-rdt",
+                    harness.binary,
                     "-c",
                     "-a",
                     "127.0.0.1",
@@ -102,7 +102,7 @@ class TestResilience(unittest.TestCase):
 
                 # Client connects to blocked proxy
                 args = [
-                    "./ipk-rdt",
+                    harness.binary,
                     "-c",
                     "-a",
                     "127.0.0.1",

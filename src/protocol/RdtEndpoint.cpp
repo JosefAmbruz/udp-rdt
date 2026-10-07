@@ -1,4 +1,4 @@
-#include "../../include/protocol/RdtEndpoint.hpp"
+#include "protocol/RdtEndpoint.hpp"
 
 RdtEndpoint::RdtEndpoint(UdpSocket &socket, TimerManager &timer_manager,
                          const Config &config)

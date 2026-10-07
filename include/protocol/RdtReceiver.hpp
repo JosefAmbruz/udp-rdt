@@ -1,8 +1,7 @@
 #pragma once
 
-#include "../dbg.h"
-#include "../net/Packet.hpp"
-#include "RdtEndpoint.hpp"
+#include "net/Packet.hpp"
+#include "protocol/RdtEndpoint.hpp"
 
 #include <chrono>
 #include <map>

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../core/Config.hpp"
-#include "../net/UdpSocket.hpp"
-#include "TimerManager.hpp"
+#include "core/Config.hpp"
+#include "net/UdpSocket.hpp"
+#include "protocol/TimerManager.hpp"
 
 #include <cstdint>
 
@@ -36,22 +36,22 @@ public:
   virtual bool is_transfer_complete() const = 0;
 
   /**
-   * @brief
+   * @brief Handles incoming datagrams ready to read from the UDP socket.
    */
   virtual void handle_network_event() = 0;
 
   /**
-   * @brief
+   * @brief Handles data availability from the local input file descriptor.
    */
   virtual void handle_io_event() = 0;
 
   /**
-   * @brief
+   * @brief Handles timeout events triggered by poll() expiration (RTO or global).
    */
   virtual void handle_timeout() = 0;
 
   /**
-   * @brief
+   * @brief Handles termination signals by sending an abort (RST) packet to the peer.
    */
   virtual void handle_interrupt() = 0;
 

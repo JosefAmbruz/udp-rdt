@@ -1,4 +1,4 @@
-#include "../../include/core/Config.hpp"
+#include "core/Config.hpp"
 
 #include <climits>
 #include <cstring>
@@ -21,9 +21,9 @@ Config::Config(int argc, char *const *argv) {
                             &option_index)) != -1) {
     switch (opt) {
     case 'h':
-      std::cout << "Usage Server: ./ipk-rdt -s -p PORT [-a ADDRESS] [-o "
+      std::cout << "Usage Server: ./udp-rdt -s -p PORT [-a ADDRESS] [-o "
                    "OUTPUT] [-w TIMEOUT]\n";
-      std::cout << "Usage Client: ./ipk-rdt -c -a HOST -p PORT [-i INPUT] [-w "
+      std::cout << "Usage Client: ./udp-rdt -c -a HOST -p PORT [-i INPUT] [-w "
                    "TIMEOUT]\n";
       exit(0);
     case 's': // Server flag

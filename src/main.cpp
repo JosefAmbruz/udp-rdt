@@ -1,5 +1,5 @@
-#include "../include/core/Application.hpp"
-#include "../include/core/Config.hpp"
+#include "core/Application.hpp"
+#include "core/Config.hpp"
 
 #include <exception>
 #include <ios>

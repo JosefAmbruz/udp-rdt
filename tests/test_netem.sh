@@ -6,15 +6,27 @@ PORT=11005
 INPUT_FILE="test_input_netem.bin"
 OUTPUT_FILE="test_output_netem.bin"
 FILE_SIZE_MB=5
+RDT_BIN="${RDT_BIN:-./udp-rdt}"
 
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
+# Check for permissions before attempting anything requiring sudo
+if [ "$(id -u)" -ne 0 ] && ! sudo -n true 2>/dev/null; then
+    echo -e "${RED}Skipping netem test: Root privileges or passwordless sudo required for tc netem.${NC}"
+    exit 0
+fi
+
+SUDO_CMD=""
+if [ "$(id -u)" -ne 0 ]; then
+    SUDO_CMD="sudo"
+fi
+
 function cleanup {
     echo "Cleaning up..."
-    sudo tc qdisc del dev $INTERFACE root 2>/dev/null
+    $SUDO_CMD tc qdisc del dev $INTERFACE root 2>/dev/null
     rm -f $INPUT_FILE $OUTPUT_FILE
 }
 
@@ -26,7 +38,7 @@ dd if=/dev/urandom of=$INPUT_FILE bs=1M count=$FILE_SIZE_MB status=none
 
 echo "Setting up tc netem impairments on $INTERFACE..."
 # Simulate: 10% loss, 5% duplication, 20ms delay with 10ms jitter, and 10% reordering
-sudo tc qdisc add dev $INTERFACE root netem \
+$SUDO_CMD tc qdisc add dev $INTERFACE root netem \
     loss 10% \
     duplicate 5% \
     delay 20ms 10ms \
@@ -38,14 +50,14 @@ if [ $? -ne 0 ]; then
 fi
 
 echo -e "Starting Server (writing to $OUTPUT_FILE)..."
-./ipk-rdt -s -p $PORT -o $OUTPUT_FILE -w 10 &
+$RDT_BIN -s -p $PORT -o $OUTPUT_FILE -w 10 &
 SERVER_PID=$!
 
 sleep 1
 
 echo -e "Starting Client (sending $INPUT_FILE)..."
 START_TIME=$(date +%s%3N)
-./ipk-rdt -c -a 127.0.0.1 -p $PORT -i $INPUT_FILE -w 10
+$RDT_BIN -c -a 127.0.0.1 -p $PORT -i $INPUT_FILE -w 10
 CLIENT_RET=$?
 END_TIME=$(date +%s%3N)
 

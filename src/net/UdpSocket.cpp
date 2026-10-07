@@ -1,4 +1,4 @@
-#include "../../include/net/UdpSocket.hpp"
+#include "net/UdpSocket.hpp"
 
 #include <cerrno>
 #include <cstdint>
@@ -11,7 +11,7 @@
 #include <system_error>
 #include <unistd.h>
 
-UdpSocket::UdpSocket() : fd(-1) {};
+UdpSocket::UdpSocket() : fd(-1) {}
 
 UdpSocket::~UdpSocket() {
   if (fd >= 0) {

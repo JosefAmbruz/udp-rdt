@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../net/Packet.hpp"
-#include "RdtEndpoint.hpp"
-#include "TimerManager.hpp"
+#include "net/Packet.hpp"
+#include "protocol/RdtEndpoint.hpp"
+#include "protocol/TimerManager.hpp"
 
 #include <chrono>
 #include <cstdint>
@@ -23,7 +23,7 @@ public:
   void handle_interrupt() override;
 
 private:
-  enum class State { SYN_SENT, ESTABLISHED, FIN_SENT, FIN_ACK_WAIT, CLOSED };
+  enum class State { SYN_SENT, ESTABLISHED, FIN_SENT, CLOSED };
 
   struct WindowSlot {
     Packet packet;
@@ -44,7 +44,6 @@ private:
   uint32_t next_seq_num = 0;
 
   void send_packet(Packet &pkt);
-  void read_and_send_data();
   void slide_window();
   void initiate_teardown();
 };

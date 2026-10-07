@@ -41,9 +41,11 @@ public:
   std::vector<uint8_t> serialize() const;
 
   /**
-   * @brief Deserializes a byte array into a structured Packet object
-   *
-   *
+   * @brief Deserializes a byte array into a structured Packet object.
+   * Validates header size, CRC32 checksum, and payload length bounds.
+   * @param data Raw network bytes containing the 20-byte header and optional payload.
+   * @return Deserialized and validated Packet object.
+   * @throws std::invalid_argument if the packet is corrupted, truncated, or smaller than HEADER_SIZE.
    */
   static Packet deserialize(const std::vector<uint8_t> &data);
 

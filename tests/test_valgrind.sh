@@ -5,11 +5,17 @@ PORT=12005
 INPUT_FILE="test_input_valgrind.bin"
 OUTPUT_FILE="test_output_valgrind.bin"
 FILE_SIZE_KB=50
+RDT_BIN="${RDT_BIN:-./udp-rdt}"
 
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
+
+if ! command -v valgrind &>/dev/null; then
+    echo -e "${RED}Skipping valgrind test: valgrind command not found in PATH.${NC}"
+    exit 0
+fi
 
 function cleanup {
     rm -f $INPUT_FILE $OUTPUT_FILE valgrind_server.log valgrind_client.log
@@ -24,7 +30,7 @@ dd if=/dev/urandom of=$INPUT_FILE bs=1024 count=$FILE_SIZE_KB status=none
 echo "Starting Server under Valgrind..."
 valgrind --leak-check=full --show-leak-kinds=all --error-exitcode=100 \
     --log-file=valgrind_server.log \
-    ./ipk-rdt -s -p $PORT -o $OUTPUT_FILE -w 5 &
+    $RDT_BIN -s -p $PORT -o $OUTPUT_FILE -w 5 &
 SERVER_PID=$!
 
 sleep 1
@@ -32,7 +38,7 @@ sleep 1
 echo "Starting Client under Valgrind..."
 valgrind --leak-check=full --show-leak-kinds=all --error-exitcode=100 \
     --log-file=valgrind_client.log \
-    ./ipk-rdt -c -a 127.0.0.1 -p $PORT -i $INPUT_FILE -w 5
+    $RDT_BIN -c -a 127.0.0.1 -p $PORT -i $INPUT_FILE -w 5
 CLIENT_RET=$?
 
 # Wait for server

@@ -37,7 +37,7 @@ class TestBasicTransfer(unittest.TestCase):
 
             # Start client manually to target IPv6 address
             args = [
-                "./ipk-rdt",
+                harness.binary,
                 "-c",
                 "-a",
                 "::1",

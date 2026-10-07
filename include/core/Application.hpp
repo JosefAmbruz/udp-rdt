@@ -1,10 +1,9 @@
 #pragma once
 
-#include "../dbg.h"
-#include "../net/UdpSocket.hpp"
-#include "../protocol/RdtEndpoint.hpp"
-#include "../protocol/TimerManager.hpp"
-#include "Config.hpp"
+#include "core/Config.hpp"
+#include "net/UdpSocket.hpp"
+#include "protocol/RdtEndpoint.hpp"
+#include "protocol/TimerManager.hpp"
 
 #include <csignal> // For SIGINT, SIGTERM
 #include <memory>

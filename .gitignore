@@ -1,94 +1,66 @@
-# ---> C++
-# Prerequisites
-*.d
+# ---> Build and Binaries
+build/
+udp-rdt
+udp-rdt_t
+udp-rdt_d
+udp-rdt_dt
+ipk-rdt
+ipk-rdt_t
+ipk-rdt_d
+ipk-rdt_dt
 
-# Compiled Object files
+# ---> Test Artifacts and Logs
+*.bin
+test_*.bin
+test_input*.bin
+test_output*.bin
+received_data.bin
+source_data.bin
+temp_test_*/
+valgrind_*.log
+*.log
+
+# ---> Compiler and Linker Artifacts
+*.d
+*.o
+*.obj
 *.slo
 *.lo
-*.o
-*.obj
-
-# Precompiled Headers
 *.gch
 *.pch
-
-# Compiled Dynamic libraries
 *.so
 *.dylib
 *.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
+*.a
+*.la
 *.lai
-*.la
-*.a
 *.lib
-
-# Executables
 *.exe
 *.out
 *.app
 
-# ---> C
-# Prerequisites
-*.d
-
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
-
-# Linker output
-*.ilk
-*.map
-*.exp
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
-
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
-
-# Debug files
+# ---> Debug Symbols
 *.dSYM/
 *.su
 *.idb
 *.pdb
 
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
+# ---> Archives and Packages
+*.zip
+*.tar.gz
+*.tar.xz
 
-ASSIGNMENT.md
+# ---> IDE and Editor Configurations
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+compile_commands.json
+.clangd/
 
-# ---> Python
+# ---> Python Cache
 __pycache__/
 *.py[cod]
 *$py.class

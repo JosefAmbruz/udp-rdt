@@ -1,7 +1,8 @@
-#include "../../include/core/Application.hpp"
+#include "core/Application.hpp"
+#include "dbg.h"
 
-#include "../../include/protocol/RdtReceiver.hpp"
-#include "../../include/protocol/RdtSender.hpp"
+#include "protocol/RdtReceiver.hpp"
+#include "protocol/RdtSender.hpp"
 
 #include <cerrno>
 #include <csignal>
@@ -33,12 +34,12 @@ Application::Application(const Config &config)
                       config.get_resolved_address_length());
     endpoint = std::make_unique<RdtSender>(socket, timer_manager, config);
   }
-};
+}
 
 Application::~Application() {
   // Memory is freed automatically via std::unique_ptr
   // UdpSocket's destructor will automatically close the socket
-};
+}
 
 void Application::run() {
   // Wait for up to 2 file descriptors

@@ -15,7 +15,7 @@ class TestIoModes(unittest.TestCase):
             # Client reads from stdin (default when -i is not provided or is "-")
             with open(harness.input_file, "rb") as f_in:
                 args = [
-                    "./ipk-rdt",
+                    harness.binary,
                     "-c",
                     "-a",
                     "127.0.0.1",
@@ -39,7 +39,7 @@ class TestIoModes(unittest.TestCase):
 
             # Server writes to stdout
             args = [
-                "./ipk-rdt",
+                harness.binary,
                 "-s",
                 "-p",
                 "10011",
@@ -66,7 +66,7 @@ class TestIoModes(unittest.TestCase):
 
             # Server writes to stdout
             args_s = [
-                "./ipk-rdt",
+                harness.binary,
                 "-s",
                 "-p",
                 "10014",
@@ -81,7 +81,7 @@ class TestIoModes(unittest.TestCase):
             # Client reads from stdin
             with open(harness.input_file, "rb") as f_in:
                 args_c = [
-                    "./ipk-rdt",
+                    harness.binary,
                     "-c",
                     "-a",
                     "127.0.0.1",

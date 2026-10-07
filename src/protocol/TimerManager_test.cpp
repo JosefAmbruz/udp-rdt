@@ -1,5 +1,5 @@
-#include "../../include/doctest.h"
-#include "../../include/protocol/TimerManager.hpp"
+#include "doctest.h"
+#include "protocol/TimerManager.hpp"
 #include <chrono>
 
 using namespace std::chrono;
