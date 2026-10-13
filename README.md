@@ -107,7 +107,7 @@ sequenceDiagram
   S->>C: ACK [ack=1]
 
   Note right of S: Packet seq=2 is lost in transit
-  C-xS: Data [seq=2, payload=1180B]
+  C-x S: Data [seq=2, payload=1180B]
   C->>S: Data [seq=3, payload=1180B]
   S->>C: ACK [ack=3] (Buffered out-of-order)
 
