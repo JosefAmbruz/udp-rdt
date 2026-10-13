@@ -121,9 +121,6 @@ sequenceDiagram
   S->>C: FIN [seq=0]
   C->>S: ACK [ack=0]
 ```
-```mermaid
-info
-```
 
 #### State Machine Models
 
